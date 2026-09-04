@@ -12,8 +12,8 @@ Página estática com informações sobre o app, download direto, changelog auto
 
 ## Funcionalidades
 
-- **Hero animado** — fundo de circuito SVG com partículas luminosas
-- **Carousel de screenshots** — com lightbox, zoom e autoplay
+- **Console de status** — hero que simula o painel do app: telemetria em tempo real e log de otimizações
+- **Design técnico** — JetBrains Mono para dados e Inter para interface, palette âmbar/grafite sem efeitos genéricos
 - **Download dinâmico** — links e tamanhos atualizados automaticamente via GitHub Releases API
 - **Changelog** — renderiza o histórico de versões diretamente do GitHub
 - **Dark/Light mode** — toggle com persistência no localStorage
@@ -44,8 +44,8 @@ Domínio: [fmoptimize.vercel.app](https://fmoptimize.vercel.app)
 
 ```
 ├── index.html          # Página principal
-├── styles.css          # Estilos (dark/light theme)
-├── script.js           # Lógica: carousel, lightbox, counters, releases API
+├── styles.css          # Design system (âmbar/grafite, dark/light theme)
+├── script.js           # Lógica: console, counters, badges, releases API
 ├── manifest.json       # PWA manifest
 ├── vercel.json         # Configuração do Vercel
 └── assets/

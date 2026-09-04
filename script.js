@@ -27,81 +27,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
 
-  // Carousel
-  const track = document.getElementById('carouselTrack');
-  const prevBtn = document.getElementById('carouselPrev');
-  const nextBtn = document.getElementById('carouselNext');
-  const dotsContainer = document.getElementById('carouselDots');
-  const slides = track.querySelectorAll('.carousel-slide');
-  let currentSlide = 0;
-
-  slides.forEach((_, i) => {
-    const dot = document.createElement('button');
-    dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', 'Ir para slide ' + (i + 1));
-    dot.addEventListener('click', () => handleManualNav(() => goToSlide(i)));
-    dotsContainer.appendChild(dot);
-  });
-
-  function goToSlide(index) {
-    currentSlide = index;
-    track.scrollTo({ left: track.clientWidth * index, behavior: 'smooth' });
-    dotsContainer.querySelectorAll('.carousel-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === index);
-    });
-    document.getElementById('carouselCounter').textContent = (index + 1) + ' / ' + slides.length;
-    document.getElementById('carouselFadeLeft').style.opacity = index > 0 ? '1' : '0';
-    document.getElementById('carouselFadeRight').style.opacity = index < slides.length - 1 ? '1' : '0';
-    preloadAdjacent(index);
-  }
-
-  function preloadAdjacent(index) {
-    [index - 1, index + 1].forEach(i => {
-      if (i >= 0 && i < slides.length) {
-        const img = slides[i].querySelector('img');
-        if (img && !img.dataset.preloaded) {
-          img.dataset.preloaded = '1';
-          const p = new Image();
-          p.src = img.src;
+  // Console log replay
+  const statusConsole = document.getElementById('statusConsole');
+  const logLines = document.querySelectorAll('.console-log .log-line');
+  if (statusConsole && logLines.length && 'IntersectionObserver' in window) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const playLog = () => {
+      logLines.forEach((line, i) => {
+        if (reduced) {
+          line.classList.add('visible');
+          return;
         }
-      }
-    });
+        setTimeout(() => line.classList.add('visible'), 250 + i * 350);
+      });
+    };
+    const consoleObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          playLog();
+          consoleObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.35 });
+    consoleObserver.observe(statusConsole);
+  } else if (logLines.length) {
+    logLines.forEach((line) => line.classList.add('visible'));
   }
-
-  // Autoplay
-  let autoplayTimer, resumeTimer;
-  function startAutoplay() {
-    stopAutoplay();
-    autoplayTimer = setInterval(() => {
-      goToSlide((currentSlide + 1) % slides.length);
-    }, 4000);
-  }
-  function stopAutoplay() { clearInterval(autoplayTimer); }
-  function pauseAutoplay() {
-    stopAutoplay();
-    clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(startAutoplay, 8000);
-  }
-  startAutoplay();
-
-  const carouselEl = document.querySelector('.carousel');
-  carouselEl.addEventListener('mouseenter', stopAutoplay);
-  carouselEl.addEventListener('mouseleave', startAutoplay);
-  carouselEl.addEventListener('focusin', stopAutoplay);
-  carouselEl.addEventListener('focusout', startAutoplay);
-
-  function handleManualNav(fn) {
-    fn();
-    pauseAutoplay();
-  }
-
-  prevBtn.addEventListener('click', () => handleManualNav(() => goToSlide(Math.max(0, currentSlide - 1))));
-  nextBtn.addEventListener('click', () => handleManualNav(() => goToSlide(Math.min(slides.length - 1, currentSlide + 1))));
 
   // GitHub badges + download sizes
   const badgeVersion = document.getElementById('badgeVersion');
   const badgeStars = document.getElementById('badgeStars');
-  const badges = document.querySelectorAll('.download-badge');
+  const sizes = {
+    portable: document.getElementById('sizePortable'),
+    setup: document.getElementById('sizeSetup'),
+  };
   fetch('https://api.github.com/repos/FelipeMeloGomes/FM-Optimization/releases')
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(all => {
@@ -116,11 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       latest.assets.forEach(a => {
         const mb = (a.size / 1048576).toFixed(1);
-        if (a.name === 'fm-optimize-portable.exe' && badges[0]) badges[0].textContent = '~' + mb + ' MB';
-        if (a.name === 'fm-optimize-setup.exe' && badges[1]) badges[1].textContent = '~' + mb + ' MB';
+        if (a.name === 'fm-optimize-portable.exe' && sizes.portable) sizes.portable.textContent = '~' + mb + ' MB';
+        if (a.name === 'fm-optimize-setup.exe' && sizes.setup) sizes.setup.textContent = '~' + mb + ' MB';
       });
     })
-    .catch(() => { badgeVersion.textContent = 'v1.0.0'; });
+    .catch(() => {
+      badgeVersion.textContent = 'v1.0.0';
+      if (sizes.portable) sizes.portable.textContent = '~81 MB';
+      if (sizes.setup) sizes.setup.textContent = '~90 MB';
+    });
   fetch('https://api.github.com/repos/FelipeMeloGomes/FM-Optimization')
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(d => { badgeStars.textContent = d.stargazers_count + ' ★'; })
@@ -149,98 +112,29 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // Lightbox
-  const lightbox = document.createElement('div');
-  lightbox.className = 'lightbox';
-  lightbox.innerHTML = '<button class="lightbox-close" aria-label="Fechar">&times;</button><button class="lightbox-prev" aria-label="Anterior">&lsaquo;</button><button class="lightbox-next" aria-label="Próximo">&rsaquo;</button><img class="lightbox-img" alt="">';
-  document.body.appendChild(lightbox);
-
-  const lightboxImg = lightbox.querySelector('.lightbox-img');
-  const lightboxPrev = lightbox.querySelector('.lightbox-prev');
-  const lightboxNext = lightbox.querySelector('.lightbox-next');
-  const carouselImgs = document.querySelectorAll('.carousel-img');
-  let lightboxIndex = 0;
-  let lightboxZoom = 1;
-
-  function resetLightbox() {
-    lightboxZoom = 1;
-    lightboxImg.style.transform = '';
-    lightboxImg.style.transition = '';
-  }
-
-  function openLightbox(index) {
-    lightboxIndex = index;
-    resetLightbox();
-    const img = carouselImgs[index];
-    lightboxImg.src = img.src;
-    lightboxImg.alt = img.alt;
-    lightbox.classList.add('open');
-    lightboxPrev.style.display = index > 0 ? '' : 'none';
-    lightboxNext.style.display = index < carouselImgs.length - 1 ? '' : 'none';
-  }
-
-  function navLightbox(delta) {
-    const i = lightboxIndex + delta;
-    if (i >= 0 && i < carouselImgs.length) openLightbox(i);
-  }
-
-  carouselImgs.forEach((img, i) => {
-    img.addEventListener('click', () => openLightbox(i));
-  });
-
-  lightboxPrev.addEventListener('click', (e) => { e.stopPropagation(); navLightbox(-1); });
-  lightboxNext.addEventListener('click', (e) => { e.stopPropagation(); navLightbox(1); });
-
-  lightboxImg.addEventListener('click', (e) => e.stopPropagation());
-  lightboxImg.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    lightboxZoom = Math.max(1, Math.min(5, lightboxZoom - e.deltaY * 0.002));
-    lightboxImg.style.transition = 'none';
-    lightboxImg.style.transform = 'scale(' + lightboxZoom + ')';
-  }, { passive: false });
-
-  lightbox.addEventListener('click', () => {
-    lightbox.classList.remove('open');
-    resetLightbox();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (!lightbox.classList.contains('open')) return;
-    if (e.key === 'Escape') { lightbox.classList.remove('open'); resetLightbox(); }
-    if (e.key === 'ArrowLeft') navLightbox(-1);
-    if (e.key === 'ArrowRight') navLightbox(1);
-  });
-
-  // Swipe down to close lightbox
-  let lightboxTouchY = 0;
-  lightbox.addEventListener('touchstart', (e) => {
-    lightboxTouchY = e.changedTouches[0].clientY;
-  }, { passive: true });
-  lightbox.addEventListener('touchend', (e) => {
-    if (e.changedTouches[0].clientY - lightboxTouchY > 80) {
-      lightbox.classList.remove('open');
-      resetLightbox();
-    }
-  }, { passive: true });
-
-  // Carousel keyboard
-  const carouselSection = document.getElementById('screenshots');
-  carouselSection.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') { goToSlide(Math.max(0, currentSlide - 1)); e.preventDefault(); }
-    if (e.key === 'ArrowRight') { goToSlide(Math.min(slides.length - 1, currentSlide + 1)); e.preventDefault(); }
-  });
-
-  // Download toast
+  // Download toast + button state
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.setAttribute('aria-live', 'polite');
   toast.setAttribute('role', 'status');
   document.body.appendChild(toast);
 
+  let toastTimer;
   document.querySelectorAll('.btn-download').forEach((btn) => {
+    const originalLabel = btn.textContent.trim();
     btn.addEventListener('click', () => {
-      toast.textContent = 'Redirecionando para o download\u2026';
+      const isSetup = originalLabel.includes('Setup');
+      const name = isSetup ? 'fm-optimize-setup.exe' : 'fm-optimize-portable.exe';
+      btn.classList.add('loading');
+      btn.textContent = '\u2192 iniciando\u2026';
+      clearTimeout(toastTimer);
+      toast.textContent = `iniciando download de ${name}\u2026`;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        btn.classList.remove('loading');
+        btn.textContent = originalLabel;
+      }, 1500);
     });
   });
 
@@ -281,14 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('theme', next);
   });
 
-  // Releases / Docs
+  // Releases
   const releasesContainer = document.getElementById('releasesContainer');
   if (releasesContainer) {
     fetch('https://api.github.com/repos/FelipeMeloGomes/FM-Optimization/releases')
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(releases => {
         if (!releases.length) {
-          releasesContainer.innerHTML = '<p class="releases-error" style="color:var(--text-muted)">Nenhuma release encontrada.</p>';
+          releasesContainer.innerHTML = '<p class="releases-error" style="color:var(--text-2)">Nenhuma release encontrada.</p>';
           return;
         }
         releases.sort((a, b) => semverCompare(b.tag_name, a.tag_name));
