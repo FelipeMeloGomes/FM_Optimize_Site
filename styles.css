@@ -500,9 +500,9 @@ html.js .log-line.visible { opacity: 1; transform: translateX(0); }
 
 .build-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 28px;
-  max-width: 760px;
+  max-width: 560px;
   margin: 0 auto;
 }
 

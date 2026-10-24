@@ -54,13 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     logLines.forEach((line) => line.classList.add('visible'));
   }
 
-  // GitHub badges + download sizes
+  // GitHub badges + download size
   const badgeVersion = document.getElementById('badgeVersion');
   const badgeStars = document.getElementById('badgeStars');
-  const sizes = {
-    portable: document.getElementById('sizePortable'),
-    setup: document.getElementById('sizeSetup'),
-  };
+  const sizeSetup = document.getElementById('sizeSetup');
+  const downloadFile = 'fm-optimize-setup.exe';
   fetch('https://api.github.com/repos/FelipeMeloGomes/FM-Optimization/releases')
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(all => {
@@ -69,20 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!latest) { badgeVersion.textContent = 'v1.0.0'; return; }
       badgeVersion.textContent = latest.tag_name;
       document.querySelectorAll('.btn-download').forEach(btn => {
-        const isSetup = btn.textContent.includes('Setup');
-        const name = isSetup ? 'fm-optimize-setup.exe' : 'fm-optimize-portable.exe';
-        btn.href = `https://github.com/FelipeMeloGomes/FM-Optimization/releases/download/${latest.tag_name}/${name}`;
+        btn.href = `https://github.com/FelipeMeloGomes/FM-Optimization/releases/download/${latest.tag_name}/${downloadFile}`;
       });
       latest.assets.forEach(a => {
         const mb = (a.size / 1048576).toFixed(1);
-        if (a.name === 'fm-optimize-portable.exe' && sizes.portable) sizes.portable.textContent = '~' + mb + ' MB';
-        if (a.name === 'fm-optimize-setup.exe' && sizes.setup) sizes.setup.textContent = '~' + mb + ' MB';
+        if (a.name === downloadFile && sizeSetup) sizeSetup.textContent = '~' + mb + ' MB';
       });
     })
     .catch(() => {
       badgeVersion.textContent = 'v1.0.0';
-      if (sizes.portable) sizes.portable.textContent = '~81 MB';
-      if (sizes.setup) sizes.setup.textContent = '~90 MB';
+      if (sizeSetup) sizeSetup.textContent = '~90 MB';
     });
   fetch('https://api.github.com/repos/FelipeMeloGomes/FM-Optimization')
     .then(r => r.ok ? r.json() : Promise.reject())
@@ -123,12 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.btn-download').forEach((btn) => {
     const originalLabel = btn.textContent.trim();
     btn.addEventListener('click', () => {
-      const isSetup = originalLabel.includes('Setup');
-      const name = isSetup ? 'fm-optimize-setup.exe' : 'fm-optimize-portable.exe';
       btn.classList.add('loading');
       btn.textContent = '\u2192 iniciando\u2026';
       clearTimeout(toastTimer);
-      toast.textContent = `iniciando download de ${name}\u2026`;
+      toast.textContent = `iniciando download de ${downloadFile}\u2026`;
       toast.classList.add('show');
       toastTimer = setTimeout(() => {
         toast.classList.remove('show');
